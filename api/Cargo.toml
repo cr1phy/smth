@@ -15,5 +15,6 @@ bcrypt = "0.15.1"
 actix-web-actors = "4.3.0"
 dotenvy = "0.15.7"
 tracing-subscriber = "0.3.18"
-migration = {path = "../migration"}
-entity = {path = "../entity"}
+migration = { path = "../migration" }
+entity = { path = "../entity" }
+service = { path = "../service" }

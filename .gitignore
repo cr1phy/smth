@@ -8,3 +8,4 @@ Cargo.lock
 out
 gen
 rust-project.json
+.env

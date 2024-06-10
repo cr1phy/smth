@@ -1,19 +1,15 @@
-use actix_web::{
-    get, post,
-    middleware::{Logger, NormalizePath, TrailingSlash},
-    web, App, HttpResponse, HttpServer, Responder,
-};
-use entity::prelude::Users;
-use entity::users;
-use migration::{Migrator, MigratorTrait};
-use sea_orm::{ActiveModelTrait, ActiveValue, Database, DatabaseConnection, EntityTrait};
-use serde::Deserialize;
 use std::env;
 
-#[derive(Deserialize, Clone)]
-struct UserInput {
-    name: String,
-}
+use actix_web::{
+    get,
+    middleware::{Logger, NormalizePath, TrailingSlash},
+    post, web, App, HttpResponse, HttpServer, Responder,
+};
+use sea_orm::{Database, DatabaseConnection, TryIntoModel};
+
+use migration::{Migrator, MigratorTrait};
+use service::query::Query;
+use service::{inputs::UserInput, mutation::Mutation};
 
 #[get("/")]
 async fn root() -> impl Responder {
@@ -21,10 +17,12 @@ async fn root() -> impl Responder {
 }
 
 #[get("/user/{id}")]
-async fn get_user(path: web::Path<i64>, state: web::Data<AppState>) -> impl Responder {
+async fn get_user(path: web::Path<i64>, data: web::Data<AppState>) -> impl Responder {
     let id = path.into_inner();
-    let db = state.conn.clone();
-    let result = Users::find_by_id(id).one(&db).await.unwrap();
+    let db = &data.conn;
+    let result = Query::find_user_by_id(db, id)
+        .await
+        .expect("Something went wrong.");
     if let Some(user) = result {
         HttpResponse::Found().json(user)
     } else {
@@ -33,17 +31,12 @@ async fn get_user(path: web::Path<i64>, state: web::Data<AppState>) -> impl Resp
 }
 
 #[post("/user")]
-async fn create_user(input: web::Json<UserInput>, state: web::Data<AppState>) -> impl Responder {
-    let db = state.conn.clone();
-    let name = ActiveValue::set(input.clone().name);
-    let user = users::ActiveModel {
-        name,
-        ..Default::default()
-    }
-    .insert(&db)
-    .await
-    .unwrap();
-    HttpResponse::Ok().json(user)
+async fn create_user(form: web::Json<UserInput>, data: web::Data<AppState>) -> impl Responder {
+    let db = &data.conn;
+    let user = Mutation::create_user(db, form.to_owned())
+        .await
+        .expect("Couldn't insert user");
+    HttpResponse::Ok().json(user.try_into_model().unwrap())
 }
 
 #[derive(Clone)]
@@ -64,7 +57,9 @@ pub async fn start() -> std::io::Result<()> {
     let port = env::var("PORT").expect("PORT is not set in .env file");
     let server_url = format!("{host}:{port}");
 
-    let conn = Database::connect(&db_url).await.unwrap();
+    let conn = Database::connect(db_url)
+        .await
+        .expect("Database connection failed");
     Migrator::up(&conn, None).await.unwrap();
 
     let state = AppState { conn };
