@@ -1,15 +1,15 @@
-use std::env;
+mod handlers;
+mod ws;
 
-use actix_web::{
-    get,
-    middleware::{Logger, NormalizePath, TrailingSlash},
-    post, web, App, HttpResponse, HttpServer, Responder,
-};
-use sea_orm::{Database, DatabaseConnection, TryIntoModel};
+use std::env;
+use std::fmt::Error;
+
+use actix_web::{App, get, HttpRequest, HttpResponse, HttpServer, middleware::{Logger, NormalizePath, TrailingSlash}, post, Responder, web};
+use sea_orm::{Database, DatabaseConnection};
 
 use migration::{Migrator, MigratorTrait};
-use service::query::Query;
 use service::{inputs::UserInput, mutation::Mutation};
+use service::query::Query;
 
 #[get("/")]
 async fn root() -> impl Responder {
@@ -36,7 +36,12 @@ async fn create_user(form: web::Json<UserInput>, data: web::Data<AppState>) -> i
     let user = Mutation::create_user(db, form.to_owned())
         .await
         .expect("Couldn't insert user");
-    HttpResponse::Ok().json(user.try_into_model().unwrap())
+    HttpResponse::Ok().json(user.id.as_ref())
+}
+
+#[get("/updates/{id}")]
+async fn updater(req: HttpRequest, stream: web::Payload) -> Result<HttpResponse, Error> {
+    
 }
 
 #[derive(Clone)]
