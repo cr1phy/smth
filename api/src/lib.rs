@@ -1,15 +1,15 @@
 use std::env;
 
 use actix_web::{
+    App,
     get,
-    middleware::{Logger, NormalizePath, TrailingSlash},
-    post, web, App, HttpRequest, HttpResponse, HttpServer, Responder,
+    HttpRequest, HttpResponse, HttpServer, middleware::{Logger, NormalizePath, TrailingSlash}, post, Responder, web,
 };
 use sea_orm::{Database, DatabaseConnection};
 
 use migration::{Migrator, MigratorTrait};
-use service::query::Query;
 use service::{inputs::UserInput, mutation::Mutation};
+use service::query::Query;
 
 use crate::ws::Ws;
 
@@ -60,20 +60,20 @@ pub async fn start() -> std::io::Result<()> {
         env::set_var("RUST_LOG", "debug");
     }
     tracing_subscriber::fmt::init();
-
+    
     dotenvy::dotenv().ok();
     let db_url = env::var("DATABASE_URL").expect("DATABASE_URL is not set in .env file");
     let host = env::var("HOST").expect("HOST is not set in .env file");
     let port = env::var("PORT").expect("PORT is not set in .env file");
     let server_url = format!("{host}:{port}");
-
+    
     let conn = Database::connect(db_url)
         .await
         .expect("Database connection failed");
     Migrator::up(&conn, None).await.unwrap();
-
+    
     let state = AppState { conn };
-
+    
     HttpServer::new(move || {
         App::new()
             .wrap(Logger::default())
@@ -81,9 +81,9 @@ pub async fn start() -> std::io::Result<()> {
             .app_data(web::Data::new(state.clone()))
             .configure(init)
     })
-    .bind(server_url)?
-    .run()
-    .await?;
+        .bind(server_url)?
+        .run()
+        .await?;
     Ok(())
 }
 
