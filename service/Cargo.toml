@@ -4,7 +4,7 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-entity = {path = "../entity"}
+entity = { path = "../entity" }
 serde = { version = "1.0.203", features = ["derive"] }
 
 [dependencies.sea-orm]

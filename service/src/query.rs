@@ -1,5 +1,7 @@
-use ::entity::{prelude::Users, users};
 use sea_orm::*;
+
+use ::entity::{prelude::Users, users};
+
 pub struct Query;
 
 impl Query {

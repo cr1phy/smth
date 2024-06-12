@@ -1,6 +1,8 @@
-use crate::inputs::UserInput;
-use ::entity::{users, users::Entity as Users};
 use sea_orm::*;
+
+use ::entity::users;
+
+use crate::inputs::UserInput;
 
 pub struct Mutation;
 
@@ -10,7 +12,7 @@ impl Mutation {
             name: Set(data.name.to_owned()),
             ..Default::default()
         }
-        .save(db)
-        .await
+            .save(db)
+            .await
     }
 }
